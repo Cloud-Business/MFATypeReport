@@ -3,6 +3,7 @@ $CSV = "C:\temp\mfaregistrationdetails.csv"
 
 $AllUsers = Get-MsolUser -All -ErrorAction SilentlyContinue
 
+
 ForEach ($User in $AllUsers) {
     Write-Host User Details for $User.UserPrincipalName
     #Write-Host "Self-Service Password Feature (SSP)..: " -NoNewline;
@@ -17,15 +18,15 @@ ForEach ($User in $AllUsers) {
 
     #Write-Host "MFA Feature (Portal) ................: " -NoNewline;
     If ((($User | Select-Object -ExpandProperty StrongAuthenticationRequirements).State) -ne $null) {
-         $MFAPortal = "Enabled! This overrides Conditional Access"
+         $PerUserMFA = "Enabled! This overrides Conditional Access"
         }
     Else { 
-        $MFAPortal = "Not Configured"
+        $PerUserMFA = "No"
     }
 
     #-Host "MFA Feature (Conditional)............: " -NoNewline;
     If ($User.StrongAuthenticationMethods) {
-        $MFAConditional = "Enabled"
+        $MFACapable = "Yes"
     #Write-host "Authentication Methods:"
     ForEach ($Type in $User.StrongAuthenticationMethods) {
         If ($Type.IsDefault -eq $True) {
@@ -39,7 +40,7 @@ ForEach ($User in $AllUsers) {
     }
     Else {
         $Method = "Not Configured"
-        $MFAConditional = "Not Configured"
+        $MFACapable = "Not Configured"
         $PhoneNumber = "Not Configured"
         $AlternativePhoneNumber = "Not Configured"
         $Email = "Not Configured"
@@ -48,10 +49,11 @@ ForEach ($User in $AllUsers) {
     $MFAs = @{
         DisplayName = $DisplayName
         UserPrincipalName = $UserPrincipalName
+        ObjectID = $User.ObjectID
         SSPR = $SSPR
-        MFAPortal = $MFAPortal
+        PerUserMFA = $PerUserMFA
         Method = $Method
-        MFAConditional = $MFAConditional
+        MFACapable = $MFACapable
         PhoneNumber = $PhoneNumber
         AlternativePhoneNumber = $AlternativePhoneNumber
         AlternativeEmail = $Email
@@ -65,5 +67,5 @@ ForEach ($User in $AllUsers) {
 
 $Results = $Results | Sort-Object DisplayName
 
-$Results | Select DisplayName, UserPrincipalName, Licensed, BlockCredential, MFAPortal, MFAConditional, Method, PhoneNumber, AlternativePhoneNumber, AlternativeEmail, SSPR | Export-CSV $CSV -Encoding UTF8 -NoTypeInformation
+$Results | Select DisplayName, UserPrincipalName, ObjectID, Licensed, BlockCredential, PerUserMFA, MFACapable, Method, PhoneNumber, AlternativePhoneNumber, AlternativeEmail, SSPR | Export-CSV $CSV -Encoding UTF8 -NoTypeInformation
 Write-Host "CSV output to $CSV" -ForegroundColor Green
